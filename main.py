@@ -84,7 +84,7 @@ app.layout = dbc.Container(
         dcc.Store(id='match-store'),
         dbc.Row(
             dbc.Col(
-                html.H1("AOE4 Player Last Match Info", className="text-center my-4")
+                html.H1("帝国时代4 录像回放 自我反省", className="text-center my-4")
             )
         ),
         dbc.Row(
@@ -152,13 +152,6 @@ app.layout = dbc.Container(
 def persist_game(ids, feudal_times, feudal_dropdowns, castle_times, castle_dropdowns, empire_times,  empire_dropdowns, strategies, improvements, match_data, n_clicks):
     if n_clicks is None:
         return
-    print(ids)
-    print(feudal_times)
-    print(castle_times)
-    print(empire_times)
-    print(strategies)
-    print(improvements)
-    print(match_data)
 
     match_name = get_game_info_from_match(match_data, True)
     ids = [entry['player_id'] for entry in ids]
@@ -179,8 +172,8 @@ def persist_game(ids, feudal_times, feudal_dropdowns, castle_times, castle_dropd
     
     match_data["player-input"] = player_input
 
-    with open(f"./data/{match_name}", 'w') as json_file:
-        json.dump(match_data, json_file, indent=4)
+    with open(f"./data/{match_name}", 'w', encoding='utf-8') as json_file:
+        json.dump(match_data, json_file, ensure_ascii=False, indent=4)
 
 
 @app.callback(
