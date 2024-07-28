@@ -74,7 +74,7 @@ AOE4_LANDMARKS_BY_CIV = {
         "castle": ["Cistern of the First Hill", "Golden Horn Tower"],
         "empire": ["Foreign Engineering Company", "Palatine School"]
     },
-    "jeanne_d_arc": {
+    "jeanne_darc": {
         "feudal": ["School of Cavalry", "Chamber of Commerce"],
         "castle": ["Guild Hall", "Royal Institute"],
         "empire": ["Red Palace", "College of Artillery"]

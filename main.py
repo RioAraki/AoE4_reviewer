@@ -9,7 +9,18 @@ from datetime import datetime
 import json
 import os
 
-# Function to fetch data from API
+
+def fetch_recent_matches(player_id):
+    api_url = f"https://aoe4world.com/api/v0/players/{player_id}/games?limit=10"
+    try:
+        response = requests.get(api_url)
+        response.raise_for_status()  # Raise an HTTPError for bad responses (4xx or 5xx)
+        return response.json()  # Parse and return the JSON response
+
+    except requests.exceptions.RequestException as e:
+        return {"error": str(e)}
+
+
 def fetch_data(player_id):
     api_url = f"https://aoe4world.com/api/v0/players/{player_id}/games?limit=1"
     try:
@@ -19,6 +30,15 @@ def fetch_data(player_id):
 
     except requests.exceptions.RequestException as e:
         return {"error": str(e)}
+
+def display_recent_matches(data):
+
+    return [
+        dbc.ListGroupItem(
+            dbc.Button(get_game_info_from_match(game), id={'type': 'game-link', 'index': i}, color="link", className="list-group-item")
+        ) 
+        for i, game in enumerate(data["games"])
+    ]
 
 # Function to extract the last match information
 def get_last_match_data(player_id):
@@ -87,6 +107,7 @@ app.layout = dbc.Container(
     [
         
         dcc.Store(id='match-store'),
+        dcc.Store(id='recent-match-store'),
         dbc.Row(
             dbc.Col(
                 html.H1("帝国时代4 录像回放 比赛记录", className="text-center my-4")
@@ -105,13 +126,27 @@ app.layout = dbc.Container(
                         className="form-control mb-3"
                     ),
                     dbc.Button(
-                        "Fetch Last Match Info",
+                        "Find Last Match Info",
                         id="fetch-button",
+                        color="primary",
+                        className="mb-3",
+                        style={"margin-right": "20px"},
+
+                    ),
+                    dbc.Button(
+                        "Find recent matches",
+                        id="recent-match-button",
                         color="primary",
                         className="mb-3"
                     )
                 ]
             )
+        ),
+        dbc.Card(
+            dbc.CardBody(
+                html.Div(id="recent-match-info")
+            ),
+            id="recent-match-card",
         ),
         dbc.Row(
             [
@@ -278,6 +313,27 @@ def match_info_to_display(match, my_profile_id):
 
     return html.Div(my_team_cards), html.Div(opponent_team_cards), html.Div(game_info), {"display": "inline-block"}, match
 
+
+@app.callback(
+    [Output("recent-match-info", "children"),
+     Output("recent-match-store", "data")],
+    [Input("recent-match-button", "n_clicks")],
+    [State("player-id-input", "value")],
+
+)
+def update_recent_matches(n_clicks, my_profile_id):
+    ctx = dash.callback_context
+
+    if not ctx.triggered:
+        return [""], None
+    
+    recent_matches = fetch_recent_matches(my_profile_id)
+    game_list = []
+    for match in recent_matches["games"]:
+        game_list.append(match)
+
+    return display_recent_matches(recent_matches), game_list
+
 @app.callback(
     [Output("my-team-info", "children"),
      Output("opponent-team-info", "children"),
@@ -285,25 +341,28 @@ def match_info_to_display(match, my_profile_id):
      Output("save-button", "style"),
      Output("match-store", "data")],
     [Input("fetch-button", "n_clicks"),
-     Input({'type': 'file-link', 'index': ALL}, 'n_clicks')],
-    [State("player-id-input", "value")],
-    allow_duplicate=True
+     Input({'type': 'file-link', 'index': ALL}, 'n_clicks'),
+     Input({'type': 'game-link', 'index': ALL}, 'n_clicks')],
+    [State("player-id-input", "value"),
+     State("recent-match-store", "data")],
 )
-def update_match_info(n_clicks, file_link_clicks, my_profile_id):
+def update_match_info(n_clicks, file_link_clicks, game_link_clicks, my_profile_id, recent_matches):
+    
     ctx = dash.callback_context
+
     if not ctx.triggered:
         return "", "", "", {"display": "none"}, None
 
-    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-    if 'fetch-button' in triggered_id:
+    if 'fetch-button' in trigger_id:
         if n_clicks:
             match = get_last_match_data(my_profile_id)
             return match_info_to_display(match, my_profile_id)
 
     elif any(element is not None for element in file_link_clicks):
         if file_link_clicks != [None, None]:
-            index = eval(triggered_id)['index']
+            index = eval(trigger_id)['index']
             files = os.listdir("./data")
             if index < len(files):
                 file_path = f"./data/{files[index]}"
@@ -314,9 +373,13 @@ def update_match_info(n_clicks, file_link_clicks, my_profile_id):
                         return match_info_to_display(content_dict, my_profile_id)
                 except Exception as e:
                     raise ValueError(e)
-    
-    else:
+    elif any(element is not None for element in game_link_clicks):
+        trigger_id_dict = json.loads(trigger_id)
+        match = recent_matches[trigger_id_dict["index"]]
         return match_info_to_display(match, my_profile_id)
+
+    else:
+        return "", "", "", {"display": "none"}, None
     
 
 @app.callback(
