@@ -7,6 +7,7 @@ import pandas as pd
 import constants
 from datetime import datetime
 import json
+import os
 
 # Function to fetch data from API
 def fetch_data(player_id):
@@ -78,7 +79,7 @@ def get_game_info_from_match(last_match, for_persist=False):
     return f"Game ID: {game_id} | Time: {start_time} | Duration: {duration} | Map: {map} | Kind: {kind} | MMR: {avg_mmr}"
 
 # Initialize the Dash app
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP])
 
 app.layout = dbc.Container(
     [
@@ -87,6 +88,28 @@ app.layout = dbc.Container(
             dbc.Col(
                 html.H1("帝国时代4 录像回放 比赛记录", className="text-center my-4")
             )
+        ),
+        html.I(className="bi bi-book floating-icon", style={"font-size": "2rem", "position": "fixed", "top": "1%", "left": "15px", "z-index": 1}, id="menu-toggle"),
+        dbc.Collapse(
+            dbc.Card(
+                dbc.CardBody(
+                    [
+                        html.H4("Saved Matches"),
+                        html.Div(id="nav-links")
+                    ]
+                )
+            ),
+            id="sidebar",
+            is_open=False,
+            style={
+                "height": "100%",
+                "width": "50%",
+                "position": "fixed",
+                "z-index": 1,
+                "top": "80px",
+                "left": "15px",
+                "transition": "0.5s",
+            }
         ),
         dbc.Row(
             dbc.Col(
@@ -130,10 +153,20 @@ app.layout = dbc.Container(
                     )
                 ]
             )
-        ),
+        )
     ],
     fluid=True
 )
+
+@app.callback(
+    Output("sidebar", "is_open"),
+    [Input("menu-toggle", "n_clicks")],
+    [State("sidebar", "is_open")]
+)
+def toggle_sidebar(n_clicks, is_open):
+    if n_clicks:
+        return not is_open
+    return is_open
 
 @app.callback(
     [
@@ -147,10 +180,9 @@ app.layout = dbc.Container(
      State({"type": "strategy-input", "player_id": ALL}, "value"),
      State({"type": "improve-input", "player_id": ALL}, "value"),
      State("match-store", "data")],
-
     [Input("save-button", "n_clicks")]
 )
-def persist_game(ids, feudal_times, feudal_dropdowns, castle_times, castle_dropdowns, empire_times,  empire_dropdowns, strategies, improvements, match_data, n_clicks):
+def serialize_game(ids, feudal_times, feudal_dropdowns, castle_times, castle_dropdowns, empire_times,  empire_dropdowns, strategies, improvements, match_data, n_clicks):
     if n_clicks is None:
         return
 
@@ -173,28 +205,14 @@ def persist_game(ids, feudal_times, feudal_dropdowns, castle_times, castle_dropd
     
     match_data["player-input"] = player_input
 
-    with open(f"./data/{match_name}", 'w', encoding='utf-8') as json_file:
+    with open(f"./data/{match_name}.json", 'w', encoding='utf-8') as json_file:
         json.dump(match_data, json_file, ensure_ascii=False, indent=4)
 
 
-@app.callback(
-    [Output("my-team-info", "children"),
-     Output("opponent-team-info", "children"),
-     Output("game-info", "children"),
-     Output("save-button", "style"),
-     Output("match-store", "data")],
-    [Input("fetch-button", "n_clicks")],
-    [State("player-id-input", "value")]
-)
-def update_match_info(n_clicks, my_profile_id):
-    if not n_clicks:
-        return "", "", "", {"display": "none"}, None
 
-    match = get_last_match_data(my_profile_id)
+def match_info_to_display(match, my_profile_id):
 
-    if isinstance(match, str):
-        return html.Div(match), html.Div(match), html.Div(match), {"display": "none"}, None
-
+    user_input = match.get("player-input", None)
     # Determine teams
     player_info_list = get_player_info_from_last_match(match)
 
@@ -219,7 +237,12 @@ def update_match_info(n_clicks, my_profile_id):
             break
 
     for player_info in player_info_list:
-        player_card = generate_player_card(player_info)
+        cur_input = None
+        if user_input:
+            cur_input = user_input[str(player_info["profile_id"])]
+        
+        player_card = generate_player_card(player_info, cur_input)
+        
         if player_info['team'] == my_team_index:
             if str(player_info['profile_id']) == my_profile_id:
                 my_team_cards = [player_card] + my_team_cards
@@ -230,8 +253,68 @@ def update_match_info(n_clicks, my_profile_id):
 
     return html.Div(my_team_cards), html.Div(opponent_team_cards), html.Div(game_info), {"display": "inline-block"}, match
 
+@app.callback(
+    [Output("my-team-info", "children"),
+     Output("opponent-team-info", "children"),
+     Output("game-info", "children"),
+     Output("save-button", "style"),
+     Output("match-store", "data")],
+    [Input("fetch-button", "n_clicks"),
+     Input({'type': 'file-link', 'index': ALL}, 'n_clicks')],
+    [State("player-id-input", "value")],
+    allow_duplicate=True
+)
+def update_match_info(n_clicks, file_link_clicks, my_profile_id):
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return "", "", "", {"display": "none"}, None
 
-def generate_player_card(player_info):
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if 'fetch-button' in triggered_id:
+        if n_clicks:
+            match = get_last_match_data(my_profile_id)
+            return match_info_to_display(match, my_profile_id)
+
+    elif 'file-link' in triggered_id:
+        if file_link_clicks != [None, None]:
+            index = eval(triggered_id)['index']
+            files = os.listdir("./data")
+            if index < len(files):
+                file_path = f"./data/{files[index]}"
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        content_dict = json.loads(content)
+                        return match_info_to_display(content_dict, my_profile_id)
+                except Exception as e:
+                    raise ValueError(e)
+
+    return "", "", "", {"display": "none"}, None
+    
+
+@app.callback(
+    Output("nav-links", "children"),
+    [Input("menu-toggle", "n_clicks")]
+)
+def deserialize_historical_match(n_clicks):
+    if n_clicks:
+        try:
+            files = os.listdir("./data")
+            links = [
+                dbc.ListGroupItem(
+                    dbc.Button(file, id={'type': 'file-link', 'index': i}, color="link", className="list-group-item-action")
+                ) 
+                for i, file in enumerate(files)
+            ]
+            return links
+        except FileNotFoundError:
+            return [dbc.ListGroupItem("No saved matches found.", className="nav-text", action=True)]
+    return []
+
+
+def generate_player_card(player_info, cur_input = None):
+
     player_id = player_info['profile_id']
     player_card = dbc.Card(
         dbc.CardBody(
@@ -242,12 +325,12 @@ def generate_player_card(player_info):
                 dbc.Row(
                     [
                         dbc.Col(html.Label("Feudal", className="mr-2"), width="auto", align="center"),
-                        dbc.Col(dbc.Input(type="time", id={"type": "feudal-time", "player_id": player_id}, className="mr-2", value=None)),
+                        dbc.Col(dbc.Input(type="time", id={"type": "feudal-time", "player_id": player_id}, className="mr-2", value=cur_input["feudal-time"] if cur_input else None)),
                         dbc.Col(
                             dcc.Dropdown(
                                 id={"type": "feudal-dropdown", "player_id": player_id},
                                 options=constants.AOE4_LANDMARKS_BY_CIV[player_info['civilization']]['feudal'],
-                                value=None,
+                                value= cur_input["feudal-dropdown"] if cur_input else None,
                                 className="mr-2"
                             ),
                         ),
@@ -258,12 +341,12 @@ def generate_player_card(player_info):
                 dbc.Row(
                     [
                         dbc.Col(html.Label("Castle", className="mr-2"), width="auto", align="center"),
-                        dbc.Col(dbc.Input(type="time", id={"type": "castle-time", "player_id": player_id}, className="mr-2", value=None)),
+                        dbc.Col(dbc.Input(type="time", id={"type": "castle-time", "player_id": player_id}, className="mr-2", value= cur_input["castle-dropdown"] if cur_input else None)),
                         dbc.Col(
                             dcc.Dropdown(
                                 id={"type": "castle-dropdown", "player_id": player_id},
                                 options=constants.AOE4_LANDMARKS_BY_CIV[player_info['civilization']]['castle'],
-                                value=None,
+                                value=cur_input["castle-dropdown"] if cur_input else None,
                                 className="mr-2"
                             ),
                         ),
@@ -274,12 +357,12 @@ def generate_player_card(player_info):
                 dbc.Row(
                     [
                         dbc.Col(html.Label("Empire", className="mr-2"), width="auto", align="center"),
-                        dbc.Col(dbc.Input(type="time", id={"type": "empire-time", "player_id": player_id}, className="mr-2", value=None)),
+                        dbc.Col(dbc.Input(type="time", id={"type": "empire-time", "player_id": player_id}, className="mr-2", value= cur_input["empire-dropdown"] if cur_input else None)),
                         dbc.Col(
                             dcc.Dropdown(
                                 id={"type": "empire-dropdown", "player_id": player_id},
                                 options=constants.AOE4_LANDMARKS_BY_CIV[player_info['civilization']]['empire'],
-                                value=None,
+                                value=cur_input["empire-dropdown"] if cur_input else None,
                                 className="mr-2"
                             ),
                         ),
@@ -294,6 +377,7 @@ def generate_player_card(player_info):
                                 id={"type": "strategy-input", "player_id": player_id},
                                 size="sm",
                                 className="mb-3",
+                                value=cur_input["strategy-input"] if cur_input else None,
                                 placeholder="What is the game plan? Is it successful or not?",
                             ),
                         ),     
@@ -308,6 +392,7 @@ def generate_player_card(player_info):
                                 id={"type": "improve-input", "player_id": player_id},
                                 size="sm",
                                 className="mb-3",
+                                value=cur_input["improve-input"] if cur_input else None,
                                 placeholder="What are some areas to improve?",
                             ),
                         ),     
