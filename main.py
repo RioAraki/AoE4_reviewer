@@ -40,14 +40,15 @@ def get_player_info_from_last_match(last_match):
     teams = last_match["teams"]
     player_info = []
 
-    for team in teams:
+    for idx, team in enumerate(teams):
         for player_data in team:
             player = player_data['player']
             player_info.append({
                 'profile_id': player['profile_id'],
                 'name': player['name'],
                 'civilization': player['civilization'],
-                'result': player['result']
+                'result': player['result'],
+                'team': idx
             })
 
     return player_info
@@ -84,7 +85,7 @@ app.layout = dbc.Container(
         dcc.Store(id='match-store'),
         dbc.Row(
             dbc.Col(
-                html.H1("帝国时代4 录像回放 自我反省", className="text-center my-4")
+                html.H1("帝国时代4 录像回放 比赛记录", className="text-center my-4")
             )
         ),
         dbc.Row(
@@ -196,6 +197,7 @@ def update_match_info(n_clicks, my_profile_id):
 
     # Determine teams
     player_info_list = get_player_info_from_last_match(match)
+
     game_info = dbc.Card(
         dbc.CardBody(
             [
@@ -213,13 +215,16 @@ def update_match_info(n_clicks, my_profile_id):
     my_team_index = -1
     for player_info in player_info_list:
         if str(player_info['profile_id']) == my_profile_id:
-            my_team_index = player_info_list.index(player_info) // 2  # Assuming 2 teams, index // 2 gives the team number
+            my_team_index = player_info['team']
             break
 
-    for index, player_info in enumerate(player_info_list):
+    for player_info in player_info_list:
         player_card = generate_player_card(player_info)
-        if index // 2 == my_team_index:
-            my_team_cards.append(player_card)
+        if player_info['team'] == my_team_index:
+            if str(player_info['profile_id']) == my_profile_id:
+                my_team_cards = [player_card] + my_team_cards
+            else:
+                my_team_cards.append(player_card)
         else:
             opponent_team_cards.append(player_card)
 
