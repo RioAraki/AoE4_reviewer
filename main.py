@@ -62,6 +62,8 @@ def convert_time_string(time_str, for_persist=False):
 
 
 def sec_to_min(sec):
+    if sec is None:
+        return "N/A"
     minutes = sec // 60
     remaining_seconds = sec % 60
     return f"{minutes:02}:{remaining_seconds:02}"
@@ -83,6 +85,7 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.
 
 app.layout = dbc.Container(
     [
+        
         dcc.Store(id='match-store'),
         dbc.Row(
             dbc.Col(
@@ -90,27 +93,7 @@ app.layout = dbc.Container(
             )
         ),
         html.I(className="bi bi-book floating-icon", style={"font-size": "2rem", "position": "fixed", "top": "1%", "left": "15px", "z-index": 1}, id="menu-toggle"),
-        dbc.Collapse(
-            dbc.Card(
-                dbc.CardBody(
-                    [
-                        html.H4("Saved Matches"),
-                        html.Div(id="nav-links")
-                    ]
-                )
-            ),
-            id="sidebar",
-            is_open=False,
-            style={
-                "height": "100%",
-                "width": "50%",
-                "position": "fixed",
-                "z-index": 1,
-                "top": "80px",
-                "left": "15px",
-                "transition": "0.5s",
-            }
-        ),
+        
         dbc.Row(
             dbc.Col(
                 [
@@ -153,7 +136,39 @@ app.layout = dbc.Container(
                     )
                 ]
             )
-        )
+        ),
+        dbc.Collapse(
+            dbc.Card(
+                dbc.CardBody(
+                    [
+                        html.H4("Saved Matches"),
+                        html.Div(id="nav-links")
+                    ]
+                )
+            ),
+            id="sidebar",
+            is_open=False,
+            style={
+                "height": "100%",
+                "width": "50%",
+                "position": "fixed",
+                # "z-index": 1,
+                "top": "80px",
+                "left": "15px",
+                "transition": "0.5s",
+            }
+        ),
+        dbc.Modal(
+        [
+            dbc.ModalHeader(dbc.ModalTitle("Save Successful")),
+            dbc.ModalBody(id="save-modal-body"),
+            dbc.ModalFooter(
+                dbc.Button("Close", id="close-save-modal", className="ml-auto")
+            ),
+        ],
+        id="save-modal",
+        is_open=False,
+    ),
     ],
     fluid=True
 )
@@ -170,6 +185,10 @@ def toggle_sidebar(n_clicks, is_open):
 
 @app.callback(
     [
+        Output("save-modal", "is_open"),
+        Output("save-modal-body", "children")
+    ],
+    [
      State({"type": "feudal-time", "player_id": ALL}, "id"),
      State({"type": "feudal-time", "player_id": ALL}, "value"),
      State({"type": "feudal-dropdown", "player_id": ALL}, "value"),
@@ -184,7 +203,7 @@ def toggle_sidebar(n_clicks, is_open):
 )
 def serialize_game(ids, feudal_times, feudal_dropdowns, castle_times, castle_dropdowns, empire_times,  empire_dropdowns, strategies, improvements, match_data, n_clicks):
     if n_clicks is None:
-        return
+        return False, ""
 
     match_name = get_game_info_from_match(match_data, True)
     ids = [entry['player_id'] for entry in ids]
@@ -204,10 +223,16 @@ def serialize_game(ids, feudal_times, feudal_dropdowns, castle_times, castle_dro
         player_input[id] = cur_input
     
     match_data["player-input"] = player_input
+    directory = "./data"
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
-    with open(f"./data/{match_name}.json", 'w', encoding='utf-8') as json_file:
+    filepath = os.path.join(directory, f"{match_name}.json")
+
+    with open(filepath, 'w', encoding='utf-8') as json_file:
         json.dump(match_data, json_file, ensure_ascii=False, indent=4)
 
+    return True, f"File saved successfully at {filepath}"
 
 
 def match_info_to_display(match, my_profile_id):
@@ -276,7 +301,7 @@ def update_match_info(n_clicks, file_link_clicks, my_profile_id):
             match = get_last_match_data(my_profile_id)
             return match_info_to_display(match, my_profile_id)
 
-    elif 'file-link' in triggered_id:
+    elif any(element is not None for element in file_link_clicks):
         if file_link_clicks != [None, None]:
             index = eval(triggered_id)['index']
             files = os.listdir("./data")
@@ -289,8 +314,9 @@ def update_match_info(n_clicks, file_link_clicks, my_profile_id):
                         return match_info_to_display(content_dict, my_profile_id)
                 except Exception as e:
                     raise ValueError(e)
-
-    return "", "", "", {"display": "none"}, None
+    
+    else:
+        return match_info_to_display(match, my_profile_id)
     
 
 @app.callback(
@@ -303,7 +329,7 @@ def deserialize_historical_match(n_clicks):
             files = os.listdir("./data")
             links = [
                 dbc.ListGroupItem(
-                    dbc.Button(file, id={'type': 'file-link', 'index': i}, color="link", className="list-group-item-action")
+                    dbc.Button(file, id={'type': 'file-link', 'index': i}, color="link", className="list-group-item")
                 ) 
                 for i, file in enumerate(files)
             ]
