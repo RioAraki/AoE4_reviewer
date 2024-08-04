@@ -62,20 +62,19 @@ def deserialize_historical_match():
     try:
         files = os.listdir("./data")
         links = [
-            dbc.ListGroupItem(
-                html.A(file, id={'type': 'file-link', 'index': i}, className="list-group-item")
+            html.Div(
+                html.A(file, id={'type': 'file-link', 'index': i}, className="cursor-pointer hover:text-blue-500")
             ) 
             for i, file in enumerate(files)
         ]
         return links
     except FileNotFoundError:
-        return [dbc.ListGroupItem("No saved matches found.", className="nav-text", action=True)]
+        return [html.Div("No saved matches found.", className="nav-text")]
 
 def display_recent_matches(data):
-
     return [
-        dbc.ListGroupItem(
-            html.A(get_game_info_from_match(game), id={'type': 'game-link', 'index': i}, className="list-group-item")
+        html.Div(
+            html.A(get_game_info_from_match(game), id={'type': 'game-link', 'index': i}, className="cursor-pointer hover:text-blue-500")
         ) 
         for i, game in enumerate(data["games"])
     ]
@@ -100,7 +99,7 @@ def match_info_to_display(match, my_profile_id):
         if user_input:
             cur_input = user_input[str(player_info["profile_id"])]
 
-        player_card = generate_player_card(player_info, cur_input)
+        player_card = generate_player_card(player_info, my_profile_id, cur_input)
         if player_info['team'] == my_team_index:
             if str(player_info['profile_id']) == my_profile_id:
                 my_team_cards = [player_card] + my_team_cards
@@ -112,7 +111,15 @@ def match_info_to_display(match, my_profile_id):
     game_info = dbc.Card(
         dbc.CardBody(
             [
-                html.A(children=html.H4(get_game_info_from_match(match), className="card-title"), href=f"https://aoe4world.com/players/{my_profile_id}-{my_name}/games/{match['game_id']}", className="text-center", target="_blank"),
+                html.A(
+                    children=html.H4(
+                        get_game_info_from_match(match), 
+                        className="card-title text-2xl font-semibold hover:text-blue-500 hover:underline"
+                    ),
+                    href=f"https://aoe4world.com/players/{my_profile_id}-{my_name}/games/{match['game_id']}",
+                    className="text-center",
+                    target="_blank"
+                )            
             ]
         ),
         className="mb-3",
@@ -132,19 +139,22 @@ def get_player_info_from_last_match(last_match):
                 'name': player['name'],
                 'civilization': player['civilization'],
                 'result': player['result'],
+                'mmr': player['mmr'],
                 'team': idx
             })
 
     return player_info
 
-def generate_player_card(player_info, cur_input = None):
+def generate_player_card(player_info, my_profile_id, cur_input = None):
     player_id = player_info['profile_id']
+    isUser = player_id == my_profile_id
     player_card = dbc.Card(
         dbc.CardBody(
             [
                 html.A(children=html.H4(player_info['name'], className="card-title text-2xl font-bold hover:underline hover:text-blue-600 transition duration-300 ease-in-out"), href=f"https://aoe4world.com/players/{player_id}", target="_blank"),
                 html.Li(f"Profile ID: {player_id}", className="card-text"),
                 html.Li(f"Civilization: {player_info['civilization']}", className="card-text", style={"margin-bottom": "5px"}),
+                html.Li(f"MMR: {player_info['mmr']}", className="card-text", style={"margin-bottom": "5px"}),
                 dbc.Row(
                     [
                         dbc.Col(html.Label("Feudal", className="mr-2"), width="auto", align="center"),
@@ -226,8 +236,8 @@ def generate_player_card(player_info, cur_input = None):
                     align="center",
                 ),
             ]
-        ),
-        className="mb-3 hover:bg-gray-50 transition duration-300 hover:shadow-md ease-in-out",
+        ), 
+        className= "mb-3 bg-gray-50 shadow-sm hover:bg-gray-100 transition duration-300 hover:shadow-xl ease-in-out"
 
     )
 

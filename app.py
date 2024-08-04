@@ -24,7 +24,7 @@ app.layout = dbc.Container(
         dcc.Store(id='recent-match-store'),
         dbc.Row(
             dbc.Col(
-                html.H1("帝国时代4 录像回放 比赛记录", className="text-center my-4")
+                html.H1("帝国时代4 录像回放 比赛记录", className="text-center my-4 text-4xl font-bold")
             )
         ),
         html.I(className="bi bi-book floating-icon", style={"font-size": "2rem", "position": "fixed", "top": "1%", "left": "15px", "z-index": -999}, id="menu-toggle"),
@@ -114,7 +114,7 @@ app.layout = dbc.Container(
             is_open=False,
         ),
     ],
-    fluid=True
+    fluid=False
 )
 
 # Register callbacks
