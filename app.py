@@ -7,7 +7,15 @@ from callback import register_callbacks
 from util import deserialize_historical_match
 
 # Initialize the Dash app
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP])
+app = dash.Dash(
+    __name__, 
+    external_stylesheets=[
+        dbc.themes.BOOTSTRAP, 
+        dbc.icons.BOOTSTRAP, 
+        'https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css'
+    ]
+)
+
 app.title = "Age of Empires 4 Match History"
 
 app.layout = dbc.Container(
@@ -19,7 +27,7 @@ app.layout = dbc.Container(
                 html.H1("帝国时代4 录像回放 比赛记录", className="text-center my-4")
             )
         ),
-        html.I(className="bi bi-book floating-icon", style={"font-size": "2rem", "position": "fixed", "top": "1%", "left": "15px", "z-index": 1}, id="menu-toggle"),
+        html.I(className="bi bi-book floating-icon", style={"font-size": "2rem", "position": "fixed", "top": "1%", "left": "15px", "z-index": -999}, id="menu-toggle"),
         dbc.Row(
             dbc.Col(
                 [
@@ -51,6 +59,7 @@ app.layout = dbc.Container(
                 html.Div(id="recent-match-info")
             ),
             id="recent-match-card",
+            className="hover:bg-gray-200 transition duration-300 ease-in-out",
             style={"margin-bottom": "10px"},
         ),
         dbc.Row(
@@ -82,7 +91,7 @@ app.layout = dbc.Container(
                 dbc.CardBody(
                     [
                         html.H4("Saved Matches"),
-                        html.Div(deserialize_historical_match())
+                        html.Div(deserialize_historical_match(), id="saved-matches")
                     ]
                 )
             ),
@@ -94,7 +103,6 @@ app.layout = dbc.Container(
                 "position": "fixed",
                 "top": "80px",
                 "left": "15px",
-                "transition": "0.5s",
             }
         ),
         dbc.Modal(

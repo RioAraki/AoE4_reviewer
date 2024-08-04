@@ -63,7 +63,7 @@ def deserialize_historical_match():
         files = os.listdir("./data")
         links = [
             dbc.ListGroupItem(
-                dbc.Button(file, id={'type': 'file-link', 'index': i}, color="link", className="list-group-item")
+                html.A(file, id={'type': 'file-link', 'index': i}, className="list-group-item")
             ) 
             for i, file in enumerate(files)
         ]
@@ -75,7 +75,7 @@ def display_recent_matches(data):
 
     return [
         dbc.ListGroupItem(
-            dbc.Button(get_game_info_from_match(game), id={'type': 'game-link', 'index': i}, color="link", className="list-group-item")
+            html.A(get_game_info_from_match(game), id={'type': 'game-link', 'index': i}, className="list-group-item")
         ) 
         for i, game in enumerate(data["games"])
     ]
@@ -142,9 +142,9 @@ def generate_player_card(player_info, cur_input = None):
     player_card = dbc.Card(
         dbc.CardBody(
             [
-                html.A(children=html.H5(player_info['name'], className="card-title"), href=f"https://aoe4world.com/players/{player_id}", target="_blank"),
+                html.A(children=html.H4(player_info['name'], className="card-title text-2xl font-bold hover:underline hover:text-blue-600 transition duration-300 ease-in-out"), href=f"https://aoe4world.com/players/{player_id}", target="_blank"),
                 html.Li(f"Profile ID: {player_id}", className="card-text"),
-                html.Li(f"Civilization: {player_info['civilization']}", className="card-text"),
+                html.Li(f"Civilization: {player_info['civilization']}", className="card-text", style={"margin-bottom": "5px"}),
                 dbc.Row(
                     [
                         dbc.Col(html.Label("Feudal", className="mr-2"), width="auto", align="center"),
@@ -190,7 +190,7 @@ def generate_player_card(player_info, cur_input = None):
                             ),
                         ),
                     ],
-                    style={"margin-bottom": "5px"},
+                    style={"margin-bottom": "10px"},
                     align="center",
                 ),
                 dbc.Row(
@@ -227,7 +227,8 @@ def generate_player_card(player_info, cur_input = None):
                 ),
             ]
         ),
-        className="mb-3",
+        className="mb-3 hover:bg-gray-50 transition duration-300 hover:shadow-md ease-in-out",
+
     )
 
     return player_card

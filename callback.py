@@ -1,6 +1,7 @@
 # callbacks.py
 import dash
 from dash.dependencies import Input, Output, State, ALL
+from dash.exceptions import PreventUpdate
 import json
 import os
 from util import fetch_recent_matches, get_game_info_from_match, save_match_data, deserialize_historical_match, display_recent_matches, get_last_match_data, match_info_to_display
@@ -15,12 +16,13 @@ def register_callbacks(app):
     )
     def update_recent_matches(n_clicks, my_profile_id):
         if not n_clicks:
-            return [""], None
+            raise PreventUpdate
         recent_matches = fetch_recent_matches(my_profile_id)
         game_list = []
         for match in recent_matches["games"]:
             game_list.append(match)
         return display_recent_matches(recent_matches), game_list
+
 
     @app.callback(
         [Output("my-team-info", "children"),
@@ -37,8 +39,6 @@ def register_callbacks(app):
     def update_match_info(n_clicks, file_link_clicks, game_link_clicks, my_profile_id, recent_matches):
         ctx = dash.callback_context
         trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
-        if not ctx.triggered:
-            return "", "", "", {"display": "none"}, None
 
         if 'fetch-button' in trigger_id:
             if n_clicks:
@@ -62,7 +62,9 @@ def register_callbacks(app):
             match = recent_matches[trigger_id_dict["index"]]
             return match_info_to_display(match, my_profile_id)
         else:
-            return "", "", "", {"display": "none"}, None
+            raise PreventUpdate
+
+        
 
     @app.callback(
         Output("sidebar", "is_open"),
@@ -77,7 +79,8 @@ def register_callbacks(app):
     @app.callback(
         [
             Output("save-modal", "is_open"),
-            Output("save-modal-body", "children")
+            Output("save-modal-body", "children"),
+            Output("saved-matches", "children")
         ],
         [
             State({"type": "feudal-time", "player_id": ALL}, "id"),
@@ -94,7 +97,7 @@ def register_callbacks(app):
     )
     def serialize_game(ids, feudal_times, feudal_dropdowns, castle_times, castle_dropdowns, empire_times, empire_dropdowns, strategies, improvements, match_data, n_clicks):
         if n_clicks is None:
-            return False, ""
+            raise PreventUpdate
         match_name = get_game_info_from_match(match_data, True)
         ids = [entry['player_id'] for entry in ids]
         player_input = {}
@@ -112,5 +115,5 @@ def register_callbacks(app):
             player_input[id] = cur_input
         match_data["player-input"] = player_input
         filepath = save_match_data(match_data, match_name)
-        return True, f"File saved successfully at {filepath}"
+        return True, f"File saved successfully at {filepath}", deserialize_historical_match()
 

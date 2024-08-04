@@ -1,0 +1,22 @@
+{
+    "tailwindCSS.includeLanguages": {
+      "python": "html"
+    },
+    "tailwindCSS.experimental.classRegex": [
+        ["className\\s*=\\s*\"([^\"]*)\"", "\\b(?:tailwind|tw|t)\\b"],
+        ["className\\s*=\\s*'([^']*)'", "\\b(?:tailwind|tw|t)\\b"],
+        ["className\\s*=\\s*`([^`]*)`", "\\b(?:tailwind|tw|t)\\b"],
+        ["className\\s*=\\s*\\{`([^`]*)`\\}", "\\b(?:tailwind|tw|t)\\b"],
+        ["className\\s*=\\s*\\{([^}]*?)\\}", "\\b(?:tailwind|tw|t)\\b"]    
+    ],
+    "editor.quickSuggestions": {
+      "strings": true
+    },
+    "tailwindCSS.emmetCompletions": true,
+    "files.associations": {
+      "*.html": "html",
+      "*.js": "javascript",
+      "*.py": "python"
+    },
+    "editor.inlineSuggest.enabled": true
+  }
