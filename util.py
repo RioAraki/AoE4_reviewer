@@ -151,10 +151,28 @@ def generate_player_card(player_info, my_profile_id, cur_input = None):
     player_card = dbc.Card(
         dbc.CardBody(
             [
-                html.A(children=html.H4(player_info['name'], className="card-title text-2xl font-bold hover:underline hover:text-blue-600 transition duration-300 ease-in-out"), href=f"https://aoe4world.com/players/{player_id}", target="_blank"),
-                html.Li(f"Profile ID: {player_id}", className="card-text"),
-                html.Li(f"Civilization: {player_info['civilization']}", className="card-text", style={"margin-bottom": "5px"}),
-                html.Li(f"MMR: {player_info['mmr']}", className="card-text", style={"margin-bottom": "5px"}),
+                html.A(
+                    children=html.H4(
+                        [
+                            html.Span(
+                                player_info['name'],
+                                className="text-2xl font-bold align-bottom"
+                            ),
+                            html.Span(
+                                f"MMR: {player_info['mmr']}",
+                                className="text-sm align-bottom ml-1"  # Smaller text with middle alignment
+                            ),
+                            html.Img(
+                                src=f"./assets/{player_info['civilization']}.png",
+                                className="inline-block ml-6 h-auto w-12 object-contain align-bottom"
+                            )
+                        ],
+                        className="card-title hover:underline hover:text-blue-600 transition duration-300 ease-in-out flex items-center"
+                    ),
+                    href=f"https://aoe4world.com/players/{player_id}",
+                    target="_blank",
+                    className="flex justify-center"
+                ),
                 dbc.Row(
                     [
                         dbc.Col(html.Label("Feudal", className="mr-2"), width="auto", align="center"),
