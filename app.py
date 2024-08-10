@@ -24,7 +24,7 @@ app.layout = dbc.Container(
         dcc.Store(id='recent-match-store'),
         dbc.Row(
             dbc.Col(
-                html.H1("帝国时代4 录像回放 比赛记录", className="text-center my-4 text-4xl font-bold")
+                html.H1("AOE4 Replay Reviewer", className="text-center my-4 text-4xl font-bold")
             )
         ),
         html.I(className="bi bi-book floating-icon", style={"font-size": "2rem", "position": "fixed", "top": "1%", "left": "15px", "z-index": -999}, id="menu-toggle"),
@@ -34,8 +34,8 @@ app.layout = dbc.Container(
                     dcc.Input(
                         id="player-id-input",
                         type="text",
-                        placeholder="Enter Player ID",
-                        value="684292",
+                        placeholder="Enter Player ID, you can find player ID on aoe4world.com",
+                        persistence=True,
                         className="form-control mb-3"
                     ),
                     dbc.Button(
@@ -80,7 +80,7 @@ app.layout = dbc.Container(
                         "Save",
                         id="save-button",
                         color="primary",
-                        className="mb-3",
+                        className="size-4",
                         style={"display": "none"}
                     )
                 ]

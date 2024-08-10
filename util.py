@@ -53,7 +53,7 @@ def get_game_info_from_match(match, for_persist=False):
     avg_mmr = match["average_mmr"]
     if for_persist:
         return f"{start_time},{map_name},{kind}"
-    return f"Game ID: {game_id} | Time: {start_time} | Duration: {duration} | Map: {map_name} | Kind: {kind} | MMR: {avg_mmr}"
+    return f"Map: {map_name} | Time: {start_time} | Duration: {duration} |  Kind: {kind} | MMR: {avg_mmr}"
 
 def save_match_data(match_data, match_name):
     directory = "./data"
@@ -91,10 +91,12 @@ def match_info_to_display(match, my_profile_id):
 
     my_team_index = -1
     my_name = ""
+    my_result = ""
     for player_info in player_info_list:
         if str(player_info['profile_id']) == my_profile_id:
             my_team_index = player_info['team']
             my_name = player_info['name']
+            my_result = player_info['result']
             break
 
     my_team_cards = []
@@ -113,6 +115,13 @@ def match_info_to_display(match, my_profile_id):
                 my_team_cards.append(player_card)
         else:
             opponent_team_cards.append(player_card)
+
+    if my_result == "loss":
+        my_team_cards = [html.H4("LOSS", className="mb-3 text-center text-red-600 text-3xl font-bold")] + my_team_cards
+        opponent_team_cards = [html.H4("WIN", className="mb-3 text-center text-green-600 text-3xl font-bold")] + opponent_team_cards
+    else:
+        my_team_cards = [html.H4("WIN", className="mb-3 text-center text-green-600 text-3xl font-bold")] + my_team_cards
+        opponent_team_cards = [html.H4("LOSS", className="mb-3 text-center text-red-600 text-3xl font-bold")] + opponent_team_cards
 
     game_info = dbc.Card(
         dbc.CardBody(
