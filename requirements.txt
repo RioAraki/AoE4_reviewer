@@ -2,3 +2,4 @@ requests
 dash
 dash-bootstrap-components
 pandas
+tzlocal

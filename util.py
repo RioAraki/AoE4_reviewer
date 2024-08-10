@@ -1,6 +1,8 @@
 # utils.py
 import os
 import json
+import pytz
+import tzlocal
 import requests
 from datetime import datetime
 import dash_bootstrap_components as dbc
@@ -27,9 +29,13 @@ def fetch_data(player_id):
 
 def convert_time_string(time_str, for_persist=False):
     dt = datetime.strptime(time_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+    dt_utc = dt.replace(tzinfo=pytz.UTC)
+    local_tz = tzlocal.get_localzone() 
+    dt_local = dt_utc.astimezone(local_tz)
+
     if for_persist:
-        return dt.strftime("%Y-%m-%d_%H_%M_%S")
-    return dt.strftime("%Y-%m-%d %H:%M:%S")
+        return dt_local.strftime("%Y-%m-%d_%H_%M_%S")
+    return dt_local.strftime("%Y-%m-%d %H:%M:%S")
 
 def sec_to_min(sec):
     if sec is None:
