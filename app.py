@@ -27,7 +27,8 @@ app.layout = dbc.Container(
                 html.H1("AOE4 Replay Reviewer", className="text-center my-4 text-4xl font-bold")
             )
         ),
-        html.I(className="bi bi-book floating-icon", style={"font-size": "2rem", "position": "fixed", "top": "1%", "left": "15px", "z-index": -999}, id="menu-toggle"),
+        html.I(className="bi bi-book floating-icon", style={"font-size": "2rem", "position": "fixed", "top": "20px", "left": "15px", "z-index": -999}, id="menu-toggle"),
+        html.I(className="bi bi-gear floating-icon", style={"font-size": "2rem", "position": "fixed", "top": "70px", "left": "15px", "z-index": -999}, id="setting-toggle"),
         dbc.Row(
             dbc.Col(
                 [

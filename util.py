@@ -91,7 +91,7 @@ def match_info_to_display(match, my_profile_id):
 
     my_team_index = -1
     my_name = ""
-    my_result = ""
+    my_result = "N/A"
     for player_info in player_info_list:
         if str(player_info['profile_id']) == my_profile_id:
             my_team_index = player_info['team']
@@ -119,9 +119,12 @@ def match_info_to_display(match, my_profile_id):
     if my_result == "loss":
         my_team_cards = [html.H4("LOSS", className="mb-3 text-center text-red-600 text-3xl font-bold")] + my_team_cards
         opponent_team_cards = [html.H4("WIN", className="mb-3 text-center text-green-600 text-3xl font-bold")] + opponent_team_cards
-    else:
+    elif my_result == "win":
         my_team_cards = [html.H4("WIN", className="mb-3 text-center text-green-600 text-3xl font-bold")] + my_team_cards
         opponent_team_cards = [html.H4("LOSS", className="mb-3 text-center text-red-600 text-3xl font-bold")] + opponent_team_cards
+    else:
+        my_team_cards = [html.H4("N/A", className="mb-3 text-center text-gray-600 text-3xl font-bold")] + my_team_cards
+        opponent_team_cards = [html.H4("N/A", className="mb-3 text-center text-gray-600 text-3xl font-bold")] + opponent_team_cards
 
     game_info = dbc.Card(
         dbc.CardBody(
