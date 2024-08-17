@@ -27,11 +27,9 @@ app.layout = dbc.Container(
                 html.H1("AOE4 Replay Reviewer", className="text-center my-4 text-4xl font-bold")
             )
         ),
-        html.I(className="bi bi-book floating-icon", style={"font-size": "2rem", "position": "fixed", "top": "20px", "left": "15px", "z-index": -999}, id="menu-toggle"),
-        html.I(className="bi bi-gear floating-icon", style={"font-size": "2rem", "position": "fixed", "top": "70px", "left": "15px", "z-index": -999}, id="setting-toggle"),
         dbc.Row(
-            dbc.Col(
-                [
+            [
+                dbc.Col(
                     dcc.Input(
                         id="player-id-input",
                         type="text",
@@ -39,6 +37,9 @@ app.layout = dbc.Container(
                         persistence=True,
                         className="form-control mb-3"
                     ),
+                    width=12
+                ),
+                dbc.Col(
                     dbc.Button(
                         "Find Last Match Info",
                         id="fetch-button",
@@ -46,14 +47,33 @@ app.layout = dbc.Container(
                         className="mb-3",
                         style={"margin-right": "20px"},
                     ),
+                    width="auto"
+                ),
+                dbc.Col(
                     dbc.Button(
                         "Find Recent Matches",
                         id="recent-match-button",
                         color="primary",
-                        className="mb-3"
-                    )
-                ]
-            )
+                        className="mb-3",
+                        style={"margin-right": "20px"},
+                    ),
+                    width="auto"
+                ),
+                dbc.Col(
+                    dcc.Upload(
+                        id="upload-data",
+                        children=dbc.Button(
+                            "Load Saved Match",
+                            color="primary",
+                            className="mb-3"
+                        ),
+                        multiple=False
+                    ),
+                    width="auto"
+                ),
+            ],
+            align="center",
+            justify="start"
         ),
         dbc.Card(
             dbc.CardBody(
@@ -77,42 +97,16 @@ app.layout = dbc.Container(
         dbc.Row(
             dbc.Col(
                 [
+                    dcc.Download(id="download-json"),
                     dbc.Button(
-                        "Save",
-                        id="save-button",
+                        "Download JSON",
+                        id="download-button",
                         color="primary",
                         className="size-4",
                         style={"display": "none"}
                     )
                 ]
             )
-        ),
-        dbc.Collapse(
-            dbc.Card(
-                dbc.CardBody(
-                    [
-                        html.H4("Saved Matches"),
-                        html.Div(deserialize_historical_match(), id="saved-matches")
-                    ]
-                )
-            ),
-            id="sidebar",
-            is_open=False,
-            style={
-                "height": "100%",
-                "width": "50%",
-                "position": "fixed",
-                "top": "80px",
-                "left": "15px",
-            }
-        ),
-        dbc.Modal(
-            [
-                dbc.ModalHeader(dbc.ModalTitle("Save Successful")),
-                dbc.ModalBody(id="save-modal-body"),
-            ],
-            id="save-modal",
-            is_open=False,
         ),
     ],
     fluid=False

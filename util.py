@@ -86,6 +86,9 @@ def display_recent_matches(data):
     ]
 
 def match_info_to_display(match, my_profile_id):
+
+    print(my_profile_id)
+
     user_input = match.get("player-input", None)
     player_info_list = get_player_info_from_last_match(match)
 
